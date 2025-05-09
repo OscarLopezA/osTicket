@@ -1,22 +1,29 @@
-FROM php:8.0-apache
+# Usa una imagen base con PHP y Apache
+FROM php:8.1-apache
 
-# Copiar los archivos del proyecto al contenedor
-COPY src/ /var/www/html/
+# Instala dependencias del sistema y extensiones de PHP requeridas por osTicket
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libzip-dev \
+    libicu-dev \
+    unzip \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql zip intl
 
-# Configurar permisos
-RUN chown -R www-data:www-data /var/www/html
-
-# Exponer el puerto 80
-EXPOSE 80
-
-# Habilitar el módulo de reescritura de Apache
+# Habilita mod_rewrite de Apache
 RUN a2enmod rewrite
 
-# Configurar el documento raíz
-ENV APACHE_DOCUMENT_ROOT /var/www/html
+# Descarga e instala osTicket
+ENV OSTICKET_VERSION=1.18
+RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_VERSION}/osTicket-v${OSTICKET_VERSION}.zip -o /tmp/osTicket.zip \
+    && unzip /tmp/osTicket.zip -d /var/www/html/ \
+    && rm /tmp/osTicket.zip \
+    && mv /var/www/html/upload /var/www/html/osticket \
+    && chown -R www-data:www-data /var/www/html
 
-# Reemplazar la configuración de DocumentRoot
-RUN sed -ri -e 's!^DocumentRoot.*!DocumentRoot ${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/000-default.conf
+# Copia el archivo de configuración (opcional, si tienes uno predefinido)
+# COPY include/ost-config.php /var/www/html/osticket/include/ost-config.php
 
-# Reiniciar Apache
-CMD ["apache2-foreground"]
+# Puerto expuesto
+EXPOSE 80
