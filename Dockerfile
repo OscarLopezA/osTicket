@@ -1,25 +1,51 @@
 # Usa una imagen base con PHP-FPM
 FROM php:8.1-fpm
 
-# Instala dependencias del sistema y extensiones de PHP requeridas por osTicket
+# Instala dependencias del sistema
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libzip-dev \
     libicu-dev \
+    libxml2-dev \
+    libc-client-dev \
+    libkrb5-dev \
+    libxslt-dev \
     unzip \
     nginx \
-    && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql zip intl opcache \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Configura las extensiones PHP requeridas
+RUN docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-install -j$(nproc) \
+    gd \
+    mysqli \
+    pdo_mysql \
+    zip \
+    intl \
+    opcache \
+    iconv \
+    ctype \
+    xml \
+    dom \
+    json \
+    mbstring \
+    phar \
+    imap \
+    xsl \
+    && pecl install apcu \
+    && docker-php-ext-enable apcu
 
 # Configura Nginx y PHP-FPM
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 
+# Optimizaciones para PHP
+COPY php.ini /usr/local/etc/php/conf.d/osticket.ini
+
 # Descarga e instala osTicket
-ENV OSTICKET_VERSION=1.18.2
+ENV OSTICKET_VERSION=1.18
 RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_VERSION}/osTicket-v${OSTICKET_VERSION}.zip -o /tmp/osTicket.zip \
     && unzip /tmp/osTicket.zip -d /var/www/html/ \
     && rm /tmp/osTicket.zip \
