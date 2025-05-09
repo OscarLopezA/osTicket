@@ -1,10 +1,11 @@
 # Usa una imagen base con PHP-FPM
 FROM php:8.1-fpm
 
-# Instala dependencias del sistema primero
+# Instala dependencias del sistema (sin MySQL/mariadb)
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
+    libwebp-dev \
     libzip-dev \
     libicu-dev \
     libxml2-dev \
@@ -12,16 +13,16 @@ RUN apt-get update && apt-get install -y \
     libkrb5-dev \
     libxslt-dev \
     libonig-dev \
-    libwebp-dev \
     unzip \
     nginx \
     && rm -rf /var/lib/apt/lists/*
 
-# Configura las extensiones PHP en pasos separados para mejor manejo de errores
+# Instala extensiones PHP en pasos separados para mejor control
 RUN docker-php-ext-configure gd --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) gd
 
 RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && apt-get install -y krb5-multidev \
     && docker-php-ext-install -j$(nproc) imap
 
 RUN docker-php-ext-install -j$(nproc) \
@@ -42,14 +43,11 @@ RUN docker-php-ext-install -j$(nproc) \
 RUN pecl install apcu \
     && docker-php-ext-enable apcu
 
-# Configura Nginx y PHP-FPM
+# Configura Nginx (sin configuración de MySQL)
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 
-# Optimizaciones para PHP
-COPY php.ini /usr/local/etc/php/conf.d/osticket.ini
-
-# Descarga e instala osTicket
+# Descarga osTicket
 ENV OSTICKET_VERSION=1.18
 RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_VERSION}/osTicket-v${OSTICKET_VERSION}.zip -o /tmp/osTicket.zip \
     && unzip /tmp/osTicket.zip -d /var/www/html/ \
@@ -60,11 +58,6 @@ RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_
 RUN chown -R www-data:www-data /var/www/html/osticket \
     && chmod -R 755 /var/www/html/osticket
 
-# Puerto expuesto
 EXPOSE 8088
 
-# Script de inicio personalizado
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
-CMD ["/start.sh"]
+CMD service nginx start && php-fpm
