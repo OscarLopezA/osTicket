@@ -26,4 +26,4 @@ RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_
 # COPY include/ost-config.php /var/www/html/osticket/include/ost-config.php
 
 # Puerto expuesto
-EXPOSE 80
+EXPOSE 8088
