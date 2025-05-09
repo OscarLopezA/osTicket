@@ -1,7 +1,7 @@
 # Usa una imagen base con PHP-FPM
 FROM php:8.1-fpm
 
-# Instala dependencias del sistema
+# Instala dependencias del sistema primero
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -11,15 +11,20 @@ RUN apt-get update && apt-get install -y \
     libc-client-dev \
     libkrb5-dev \
     libxslt-dev \
+    libonig-dev \
+    libwebp-dev \
     unzip \
     nginx \
     && rm -rf /var/lib/apt/lists/*
 
-# Configura las extensiones PHP requeridas
-RUN docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install -j$(nproc) \
-    gd \
+# Configura las extensiones PHP en pasos separados para mejor manejo de errores
+RUN docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) gd
+
+RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-install -j$(nproc) imap
+
+RUN docker-php-ext-install -j$(nproc) \
     mysqli \
     pdo_mysql \
     zip \
@@ -32,9 +37,9 @@ RUN docker-php-ext-configure gd --with-jpeg \
     json \
     mbstring \
     phar \
-    imap \
-    xsl \
-    && pecl install apcu \
+    xsl
+
+RUN pecl install apcu \
     && docker-php-ext-enable apcu
 
 # Configura Nginx y PHP-FPM
