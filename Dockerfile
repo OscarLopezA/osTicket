@@ -32,6 +32,13 @@ RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_
     # Crea el archivo de configuración desde el archivo de muestra
     && cp /var/www/html/osticket/include/ost-sampleconfig.php /var/www/html/osticket/include/ost-config.php
 
+# Descarga e instala los paquetes de idioma español
+RUN curl -SL https://github.com/osTicket/osTicket-translations/archive/master.zip -o /tmp/translations.zip \
+    && unzip /tmp/translations.zip -d /tmp \
+    && mkdir -p /var/www/html/osticket/include/i18n \
+    && cp -r /tmp/osTicket-translations-master/es_ES /var/www/html/osticket/include/i18n/ \
+    && rm -rf /tmp/translations.zip /tmp/osTicket-translations-master
+
 # Configura permisos
 RUN chown -R www-data:www-data /var/www/html/osticket \
     && chmod -R 755 /var/www/html/osticket \
