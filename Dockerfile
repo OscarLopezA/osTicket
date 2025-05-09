@@ -28,11 +28,15 @@ ENV OSTICKET_VERSION=1.18.2
 RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_VERSION}/osTicket-v${OSTICKET_VERSION}.zip -o /tmp/osTicket.zip \
     && unzip /tmp/osTicket.zip -d /var/www/html/ \
     && rm /tmp/osTicket.zip \
-    && mv /var/www/html/upload /var/www/html/osticket
+    && mv /var/www/html/upload /var/www/html/osticket \
+    # Crea el archivo de configuración desde el archivo de muestra
+    && cp /var/www/html/osticket/include/ost-sampleconfig.php /var/www/html/osticket/include/ost-config.php
 
 # Configura permisos
 RUN chown -R www-data:www-data /var/www/html/osticket \
-    && chmod -R 755 /var/www/html/osticket
+    && chmod -R 755 /var/www/html/osticket \
+    # Asegura permisos correctos para el archivo de configuración
+    && chmod 0666 /var/www/html/osticket/include/ost-config.php
 
 # Puerto expuesto
 EXPOSE 8088
