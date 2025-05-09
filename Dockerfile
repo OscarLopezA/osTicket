@@ -7,10 +7,15 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libzip-dev \
     libicu-dev \
+    libc-client-dev \
+    libkrb5-dev \
     unzip \
     nginx \
     && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql zip intl opcache \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql zip intl opcache imap \
+    && pecl install apcu \
+    && docker-php-ext-enable apcu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
