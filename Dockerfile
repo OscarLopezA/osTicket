@@ -19,7 +19,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 
 # Descarga e instala osTicket
-ENV OSTICKET_VERSION=1.18
+ENV OSTICKET_VERSION=1.18.2
 RUN curl -SL https://github.com/osTicket/osTicket/releases/download/v${OSTICKET_VERSION}/osTicket-v${OSTICKET_VERSION}.zip -o /tmp/osTicket.zip \
     && unzip /tmp/osTicket.zip -d /var/www/html/ \
     && rm /tmp/osTicket.zip \
